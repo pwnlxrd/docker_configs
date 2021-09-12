@@ -1,0 +1,46 @@
+version: "2.2"
+services:
+     bind:
+        container_name: bind
+        hostname: bind
+        #network_mode: bridge
+        image: eafxx/bind
+        restart: unless-stopped
+        ports:
+            - "53:53/tcp"
+            - "53:53/udp"
+              #- 10000:10000/tcp
+#        mac_address: 02:42:C0:A8:1F:85
+        networks:
+              dns-network:
+                    ipv4_address: 66.66.66.6
+#              bind:
+#                 ipv4_address: 192.168.31.134
+        volumes:
+            - ./bind/data:/data
+        environment:
+            - WEBMIN_ENABLED=false
+            - WEBMIN_INIT_SSL_ENABLED=false
+            - WEBMIN_INIT_REFERERS=pwn.dev
+            - WEBMIN_INIT_REDIRECT_PORT=10000
+            - ROOT_PASSWORD=password
+            - TZ=Europe/Moscow
+
+#networks:
+#  bind:
+#    driver: macvlan
+#    driver_opts:
+#        parent: etc0:0
+#    ipam:
+#      driver: default
+#      config:
+#        - subnet: 192.168.31.0/24
+#          gateway: 192.168.31.1
+networks:
+  dns-network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 66.66.66.0/24
+          #ip_range: 66.66.66.0/24

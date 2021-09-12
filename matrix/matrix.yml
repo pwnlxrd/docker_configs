@@ -1,0 +1,10 @@
+version: '3'
+services:
+    searx:
+        container_name: matrix
+        image: matrixdotorg/synapse:latest
+        restart: unless-stopped
+        volumes:
+            - ./data:/data
+        ports:
+            - "8008:8008"

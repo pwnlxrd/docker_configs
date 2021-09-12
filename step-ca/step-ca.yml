@@ -1,0 +1,29 @@
+version: "3.3"
+
+#networks:
+#  ca-network:
+#    driver: bridge
+#    ipam:
+#      config:
+#        - subnet: 192.168.31.0/16
+#          ip_range: 192.168.31.0/16
+#          gateway: 192.168.31.1
+#          aux_addresses:
+#            dns: 192.168.31.131
+#            server: 192.168.31.129
+
+services:
+  server:
+    image: smallstep/step-ca
+    restart: unless-stopped
+    volumes:
+            - /data/containers_data/step-ca:/home/step
+        #      - ./resolv.conf:/etc/resolv.conf:ro
+#    networks:
+#      - ca-network
+#    dns:
+            #      - 192.168.31.132
+    ports:
+      - "9000:9000"
+    dns:
+            - 192.168.0.125

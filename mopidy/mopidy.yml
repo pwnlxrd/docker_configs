@@ -1,0 +1,10 @@
+version: "3"
+
+services:
+    mopidy:
+        image: rmalchow/mopidy
+        ports:
+            - "6680:6680"
+        volumes:
+                - ./conf/:/etc/mopidy/    
+        restart: always

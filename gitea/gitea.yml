@@ -1,0 +1,52 @@
+version: "2.2"
+
+networks:
+  gitea:
+    external: false
+
+  default:
+    driver: bridge
+
+services:
+  db:
+    container_name: postresqlG
+    image: postgres:latest
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=gitea-admin-db
+      - POSTGRES_PASSWORD=PASSWORD
+      - POSTGRES_DB=gitea-db
+    networks:
+      - gitea
+    volumes:
+      - /data/containers_data/gitea/gitea_data_db:/var/lib/postgresql/data
+
+
+  server:
+    image: gitea/gitea:latest
+    container_name: gitea
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - DB_TYPE=postgres
+      - DB_HOST=db:5432
+      - DB_NAME=gitea-db
+      - DB_USER=gitea-admin-db
+      - DB_PASSWD=PASSWORD
+    restart: unless-stopped
+    networks:
+      - gitea
+        #- traefik_proxy
+    volumes:
+      - /data/containers_data/gitea/gitea_data:/data/gitea
+      - /data/containers_data/gitea/gitea_repo:/data/git
+      - /data/containers_data/gitea/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "443:3000"
+      - "223:22"
+
+    depends_on:
+            - db
+
+

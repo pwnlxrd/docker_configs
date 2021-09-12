@@ -1,0 +1,52 @@
+version: "3.3"
+
+services:
+
+  traefik:
+    image: "traefik:latest"
+    container_name: "traefik"
+    command:
+      - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.pwn-ca.acme.httpchallenge=true"
+      - "--certificatesresolvers.pwn-ca.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.pwn-ca.acme.caserver=https://ca.pwn.dev:9000/acme/acme/directory"
+      - "--certificatesresolvers.pwn-ca.acme.email=admin@pwn.dev"
+      - "--certificatesresolvers.pwn-ca.acme.storage=/letsencrypt/acme.json"
+    environment:
+      LEGO_CA_CERTIFICATES: "/usr/local/share/ca-certificates/pwn-ca-bundle.pem"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/usr/local/share/ca-certificates/pwn-ca-bundle.pem:/usr/local/share/ca-certificates/pwn-ca-bundle.pem:ro"
+      #- "/data/containers_data/traefik/configs/traefik.yml:/traefik.yml:ro"
+      - "/data/containers_data/traefik/certs:/letsencrypt"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.pwn.dev`) && (PathPrefix(`/api`) || PathPrefix(`/dashboard`))"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.tls.certresolver=pwn-ca"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.services.traefik-traefik.loadbalancer.server.port=8080"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:$$apr1$$vDSqkf.v$$GTJOtsd9CBiAFFnHTI2Ds1"
+      - "traefik.http.routers.traefik.middlewares=traefik-auth"
+
+  whoami:
+    image: "traefik/whoami"
+    container_name: "simple-service"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.pwn.dev`)"
+      - "traefik.http.routers.whoami.entrypoints=websecure"
+      - "traefik.http.routers.whoami.tls.certresolver=pwn-ca"
+      - "traefik.http.services.whoami-service.loadbalancer.server.port=80"
+      #- "traefik.http.routers.whoami.middlewares=traefik-compress"

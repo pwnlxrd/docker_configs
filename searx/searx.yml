@@ -1,0 +1,13 @@
+version: '3'
+services:
+    searx:
+        container_name: searx
+        image: searx:test1
+        restart: unless-stopped
+        ports:
+            - "8085:8080"
+        volumes:
+            - ./searx_conf:/etc/searx:rw
+        environment:
+            - BASE_URL=http://127.0.0.1:8085
+        network_mode: bridge

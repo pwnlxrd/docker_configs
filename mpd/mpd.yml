@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+    mpd:
+        image: gists/mpd
+        ports:
+            - "6600:6600"
+            - "8800:8000"
+        volumes:
+            - ./music:/music
+            - ./playlists:/var/lib/mpd/playlists
+        devices:
+            - /dev/snd
+        restart: always

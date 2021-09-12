@@ -1,0 +1,19 @@
+version: "2"
+services:
+  registry:
+    restart: always
+    image: registry:2
+    ports:
+      - 5000:5000  
+    volumes:
+      - ./data:/var/lib/registry
+  verdaccio:
+    build: .
+    container_name: verdaccio
+    environment:
+      - VERDACCIO_PORT
+    ports:
+      - $VERDACCIO_PORT:$VERDACCIO_PORT
+    volumes:
+            - ./verdaccio-storage:/verdaccio/storage
+    restart: always

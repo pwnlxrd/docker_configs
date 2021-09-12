@@ -1,0 +1,10 @@
+version: '3'
+services:
+    element-web:
+        container_name: element-web
+        build:
+           context: .
+           dockerfile: /data/share/projects/git/docker_configs/element-web/Dockerfile
+        restart: unless-stopped
+        ports:
+            - "8090:80"

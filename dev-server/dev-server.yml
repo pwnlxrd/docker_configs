@@ -1,0 +1,13 @@
+version: '3'
+services:
+  dev-server:
+    container_name: dev-server
+    image: dev-server:alpha2
+    network_mode: bridge
+    volumes:
+      - "/home/pwnlxrd/.ssh/authorized_keys:/home/user/.ssh/authorized_keys:ro"
+      - /data/share:/data
+    ports:
+      - "7001:22"
+      - "8000:8000"
+    restart: unless-stopped

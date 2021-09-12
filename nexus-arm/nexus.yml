@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+  nexus:
+    image: klo2k/nexus3:latest
+    container_name: nexus
+    hostname: nexus
+    #networks:
+      #- devops
+    volumes:
+      - "./nexus-data:/nexus-data"
+    ports:
+      - "22222:8081/tcp"
+    #volumes:
+     #- /opt/nexus/sonatype-work/nexus3:/nexus-data

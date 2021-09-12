@@ -1,0 +1,15 @@
+version: '3.3'
+
+services:
+  prometheus-bot:
+    container_name: telegrambot
+    image: alertbot:0.2
+
+    volumes:
+      - ./telegrambot/:/etc/telegrambot/
+      - ./telegrambot/config.yaml:/config.yaml
+    ports:
+      - 8099:9087
+    restart: always
+
+
