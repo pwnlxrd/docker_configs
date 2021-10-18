@@ -3,6 +3,8 @@ version: '3.6'
 networks:
   monitor-net:
     driver: bridge
+  gitea:
+    external: false
 
 # volumes:
 #     prometheus_data: {}
@@ -29,7 +31,6 @@ services:
   traefik:
     image: "traefik:latest"
     container_name: "traefik"
-    restart: unless-stopped
     environment:
       LEGO_CA_CERTIFICATES: "/usr/local/share/ca-certificates/pwn-ca-bundle.pem"
     ports:
@@ -50,7 +51,7 @@ services:
       - "traefik.http.routers.traefik.service=api@internal"
       - "traefik.http.routers.traefik.tls=true"
       - "traefik.http.routers.traefik.tls.certresolver=pwn-ca"
-      - "traefik.http.middlewares.traefik-auth.basicauth.users=${TRAEFIK-AUTH-LOGIN}:${TRAEFIK-AUTH-PASSWORD}"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=admin:${traefik_pass}"
       - "traefik.http.routers.traefik.middlewares=traefik-auth"
     depends_on:
       - "step-ca"
@@ -191,9 +192,9 @@ services:
     image: postgres:latest
     restart: unless-stopped
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DBNAME}
+      - POSTGRES_USER=gitea-admin-db
+      - POSTGRES_PASSWORD=${gitea_db_pass}
+      - POSTGRES_DB=gitea-db
     networks:
       - monitor-net
     volumes:
@@ -207,10 +208,10 @@ services:
       - USER_UID=1000
       - USER_GID=1000
       - DB_TYPE=postgres
-      - DB_HOST=${POSTGRES_DBNAME}:5432
-      - DB_NAME=${POSTGRES_DBNAME}
-      - DB_USER=${POSTGRES_USER}
-      - DB_PASSWD=${POSTGRES_PASSWORD}
+      - DB_HOST=gitea-db:5432
+      - DB_NAME=gitea-db
+      - DB_USER=gitea-admin-db
+      - DB_PASSWD=${gitea_db_pass}
     restart: unless-stopped
     networks:
       - monitor-net
@@ -220,7 +221,7 @@ services:
       - /data/containers_data/gitea/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
     ports:
-      - "22:22"
+      - "223:22"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.gitea.rule=Host(`git.pwn.dev`)"
@@ -283,7 +284,7 @@ services:
       - BIND_ADDRESS=0.0.0.0:8080
       - BASE_URL=https://searx.pwn.dev/
       - MORTY_URL=https://searx.pwn.dev/morty/
-      - MORTY_KEY=${MORTY_KEY}
+      - MORTY_KEY=${morty_key_secret}
     cap_drop:
       - ALL
     cap_add:
@@ -308,21 +309,13 @@ services:
       - monitor-net
     command: -timeout 6 -ipv6
     environment:
-      - MORTY_KEY=${MORTY_KEY}
+      - MORTY_KEY=${morty_key_secret}
       - MORTY_ADDRESS=0.0.0.0:3000
     #logging:
     #  driver: none
     read_only: true
     cap_drop:
       - ALL
-
-# NGINX for proxmox
-
-#  nginx: 
-#    image: nginx:latest
-#    container_name: nginx-proxmox
-#    volumes:
-#      - /data/containers_data/nginx/nginx.conf.proxmox:/etc/nginx/nginx.conf
 
 #main dev-server
 
@@ -375,24 +368,47 @@ services:
 #         - "traefik.http.routers.element-web.tls.certresolver=pwn-ca"
 #         - "traefik.http.services.element-web-service.loadbalancer.server.port=80"
 
+#Samba
+  samba:
+    image: dperson/samba
+    environment:
+      TZ: 'Europe/Moscow'
+    networks:
+      - default
+    ports:
+      - "137:137/udp"
+      - "138:138/udp"
+      - "139:139/tcp"
+      - "445:445/tcp"
+    read_only: false
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    volumes:
+      - /data/share:/mnt
+        #- /mnt2:/mnt2:z
+    command: '-s "Vault;/mnt;yes;no;no;pwnlxrd" -u "pwnlxrd;${nfs_pass}" -p'
+
 #wikijs
 
-  wikijs:
-    image: ghcr.io/linuxserver/wikijs
-    container_name: wikijs
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Moscow
-    networks:
-      - monitor-net
-    volumes:
-      - /data/containers_data/wikijs/config:/config
-      - /data/containers_data/wikijs/data:/data
-    restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.wikijs.rule=Host(`todo.pwn.dev`)"
-      - "traefik.http.routers.wikijs.entrypoints=websecure"
-      - "traefik.http.routers.wikijs.tls.certresolver=pwn-ca"
-      - "traefik.http.services.wikijs-service.loadbalancer.server.port=3000"
+  # wikijs:
+  #   image: ghcr.io/linuxserver/wikijs
+  #   container_name: wikijs
+  #   environment:
+  #     - PUID=1000
+  #     - PGID=1000
+  #     - TZ=Europe/Moscow
+  #   networks:
+  #     - monitor-net
+  #   volumes:
+  #     - /data/containers_data/wikijs/config:/config
+  #     - /data/containers_data/wikijs/data:/data
+  #   restart: unless-stopped
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.wikijs.rule=Host(`todo.pwn.dev`)"
+  #     - "traefik.http.routers.wikijs.entrypoints=websecure"
+  #     - "traefik.http.routers.wikijs.tls.certresolver=pwn-ca"
+  #     - "traefik.http.services.wikijs-service.loadbalancer.server.port=3000"
